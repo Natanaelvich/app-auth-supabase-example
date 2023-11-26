@@ -2,22 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { StyleSheet, View, Alert, TextInput, Button, Text } from "react-native";
 import { Session } from "@supabase/supabase-js";
-
-type Post = {
-  id: string;
-  user_id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-};
+import Posts from "./Posts";
 
 export default function Account({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [post, setPost] = useState("");
-  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     if (session) getProfile();
@@ -86,36 +77,6 @@ export default function Account({ session }: { session: Session }) {
     }
   }
 
-  async function addPost() {
-    try {
-      setLoading(true);
-      if (!session?.user) throw new Error("No user on the session!");
-
-      const updates = {
-        user_id: session?.user.id,
-        title: post,
-      };
-
-      const { error } = await supabase.from("posts").upsert(updates);
-
-      if (error) {
-        throw error;
-      }
-
-      setPost("");
-
-      const posts = await supabase.from("posts").select("*");
-      setPosts(posts.data as Post[]);
-    } catch (error) {
-      console.log(error);
-      if (error instanceof Error) {
-        Alert.alert(error.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <View style={styles.container}>
       <View style={[styles.verticallySpaced, styles.mt20]}>
@@ -157,24 +118,7 @@ export default function Account({ session }: { session: Session }) {
       </View>
 
       {/* Add new Posts */}
-      <View style={styles.verticallySpaced}>
-        <TextInput
-          style={styles.input}
-          value={post || ""}
-          onChangeText={(text) => setPost(text)}
-          placeholder="post"
-        />
-        <Button title="Add new Post" onPress={addPost} />
-      </View>
-
-      {/* List of Posts */}
-      <View style={styles.verticallySpaced}>
-        {posts.map((post) => (
-          <View key={post.id}>
-            <Text>{post.title}</Text>
-          </View>
-        ))}
-      </View>
+      <Posts session={session} />
     </View>
   );
 }
