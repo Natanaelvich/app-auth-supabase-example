@@ -12,7 +12,7 @@ type Post = {
 };
 
 export default function Posts({ session }: { session: Session }) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [post, setPost] = useState("");
   const [posts, setPosts] = useState<Post[]>([]);
 
@@ -33,9 +33,6 @@ export default function Posts({ session }: { session: Session }) {
       }
 
       setPost("");
-
-      const posts = await supabase.from("posts").select("*");
-      setPosts(posts.data as Post[]);
     } catch (error) {
       console.log(error);
       if (error instanceof Error) {
@@ -45,6 +42,90 @@ export default function Posts({ session }: { session: Session }) {
       setLoading(false);
     }
   }
+
+  async function deletePost(id: string) {
+    try {
+      setLoading(true);
+      if (!session?.user) throw new Error("No user on the session!");
+
+      const { error } = await supabase.from("posts").delete().match({ id });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.log(error);
+      if (error instanceof Error) {
+        Alert.alert(error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime:public:posts")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "posts",
+        },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            setPosts((currentPosts) =>
+              currentPosts.filter((post) => post.id !== payload.old.id)
+            );
+            return;
+          }
+
+          if (payload.eventType === "UPDATE") {
+            setPosts((currentPosts) =>
+              currentPosts.map((post) => {
+                if (post.id === payload.new.id) {
+                  return payload.new as Post;
+                }
+                return post;
+              })
+            );
+            return;
+          }
+
+          if (payload.eventType === "INSERT") {
+            setPosts((currentPosts) => [payload.new as Post, ...currentPosts]);
+            return;
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        if (data) setPosts(data);
+      } catch (error) {
+        console.log(error);
+        if (error instanceof Error) {
+          Alert.alert(error.message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -56,14 +137,19 @@ export default function Posts({ session }: { session: Session }) {
           onChangeText={(text) => setPost(text)}
           placeholder="post"
         />
-        <Button title="Add new Post" onPress={addPost} disabled={!loading} />
+        <Button title="Add new Post" onPress={addPost} disabled={loading} />
       </View>
 
       {/* List of Posts */}
       <View style={styles.verticallySpaced}>
         {posts.map((post) => (
-          <View key={post.id}>
+          <View key={post.id} style={styles.post}>
             <Text>{post.title}</Text>
+            <Button
+              title="Delete"
+              onPress={() => deletePost(post.id)}
+              disabled={loading}
+            />
           </View>
         ))}
       </View>
@@ -73,7 +159,6 @@ export default function Posts({ session }: { session: Session }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 40,
     padding: 12,
   },
   verticallySpaced: {
@@ -90,5 +175,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 20,
     padding: 10,
+  },
+  post: {
+    marginTop: 20,
+    padding: 10,
+    borderColor: "gray",
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });
