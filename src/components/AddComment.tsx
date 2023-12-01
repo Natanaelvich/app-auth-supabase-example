@@ -119,18 +119,18 @@ export default function AddComment({
         (payload) => {
           if (payload.eventType === "DELETE") {
             setComments((currentComments) =>
-              currentComments.filter((post) => post.id !== payload.old.id)
+              currentComments.filter((comment) => comment.id !== payload.old.id)
             );
             return;
           }
 
           if (payload.eventType === "UPDATE") {
             setComments((currentComments) =>
-              currentComments.map((post) => {
-                if (post.id === payload.new.id) {
+              currentComments.map((comment) => {
+                if (comment.id === payload.new.id) {
                   return payload.new as Comment;
                 }
-                return post;
+                return comment;
               })
             );
             return;
@@ -150,6 +150,8 @@ export default function AddComment({
       channel.unsubscribe();
     };
   }, []);
+
+  console.log(comments)
 
   return (
     <View>
