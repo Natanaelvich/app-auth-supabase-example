@@ -114,6 +114,7 @@ export default function AddComment({
           event: "*",
           schema: "public",
           table: "comments",
+          filter: "post_id = '" + post_id + "'",
         },
         (payload) => {
           if (payload.eventType === "DELETE") {
@@ -136,10 +137,8 @@ export default function AddComment({
           }
 
           if (payload.eventType === "INSERT") {
-            console.log(payload.new);
             setComments((currentComments) => {
-            console.log(currentComments)
-                return [payload.new as Comment, ...currentComments]
+              return [payload.new as Comment, ...currentComments];
             });
             return;
           }
