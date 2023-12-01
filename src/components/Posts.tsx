@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { StyleSheet, View, Alert, TextInput, Button, Text } from "react-native";
 import { Session } from "@supabase/supabase-js";
+import AddComment from "./AddComment";
 
 type Post = {
   id: string;
@@ -63,6 +64,7 @@ export default function Posts({ session }: { session: Session }) {
     }
   }
 
+  console.log(posts[0]);
   useEffect(() => {
     const channel = supabase
       .channel("realtime:public:posts")
@@ -144,12 +146,16 @@ export default function Posts({ session }: { session: Session }) {
       <View style={styles.verticallySpaced}>
         {posts.map((post) => (
           <View key={post.id} style={styles.post}>
-            <Text>{post.title}</Text>
-            <Button
-              title="Delete"
-              onPress={() => deletePost(post.id)}
-              disabled={loading}
-            />
+            <View style={styles.postContent}>
+              <Text>{post.title}</Text>
+              <Button
+                title="Delete"
+                onPress={() => deletePost(post.id)}
+                disabled={loading}
+              />
+            </View>
+
+            <AddComment post_id={post.id} session={session} />
           </View>
         ))}
       </View>
@@ -181,6 +187,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderColor: "gray",
     borderWidth: 1,
+    gap: 10,
+  },
+  postContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
