@@ -107,14 +107,14 @@ export default function AddComment({
 
   useEffect(() => {
     const channel = supabase
-      .channel("realtime:public:comments")
+      .channel("realtime:public:comments:post_id=eq." + post_id)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "comments",
-          filter: "post_id = '" + post_id + "'",
+          filter: "post_id=eq." + post_id,
         },
         (payload) => {
           if (payload.eventType === "DELETE") {
@@ -150,8 +150,6 @@ export default function AddComment({
       channel.unsubscribe();
     };
   }, []);
-
-  console.log(comments)
 
   return (
     <View>
