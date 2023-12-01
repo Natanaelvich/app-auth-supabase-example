@@ -64,7 +64,6 @@ export default function Posts({ session }: { session: Session }) {
     }
   }
 
-  console.log(posts[0]);
   useEffect(() => {
     const channel = supabase
       .channel("realtime:public:posts")
