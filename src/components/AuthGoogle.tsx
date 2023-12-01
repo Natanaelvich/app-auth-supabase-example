@@ -7,10 +7,10 @@ import { supabase } from '../lib/supabase'
 
   
   export default function AuthGoogle() {
-    GoogleSignin.configure({
-      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-      webClientId: 'YOUR CLIENT ID FROM GOOGLE CONSOLE',
-    })
+    // GoogleSignin.configure({
+    //   scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    //   webClientId: 'YOUR CLIENT ID FROM GOOGLE CONSOLE',
+    // })
   
     return (
       <GoogleSigninButton
